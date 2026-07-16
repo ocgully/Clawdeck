@@ -13,10 +13,13 @@ export type KeyRole =
   | { kind: "pager"; direction: "next" | "prev" }
   | { kind: "attention" }
   | { kind: "monitor"; title: string; command: string; intervalSec: number }
+  | { kind: "skills" }
   | { kind: "empty" };
 
+export const LAYOUT_VERSION = 2;
+
 export interface Layout {
-  version: 1;
+  version: number;
   keys: KeyRole[];
 }
 
@@ -28,23 +31,23 @@ const monitorsDir = join(homedir(), ".claude", "claudedeck", "monitors");
 
 /**
  * Build a sensible default for any geometry:
- *  - rightmost column: page-next (top), attention (middle), page-prev (bottom)
- *  - second-from-right column: monitor loops
+ *  - rightmost column: page-up (top), attention (middle), page-down (bottom)
+ *  - second-from-right column: Slack monitor (top), Skills (below it)
  *  - everything else: session tiles, filled left-to-right, top-to-bottom
  */
 export function defaultLayout(geom: DeckGeometry): Layout {
   const { keyCount, columns, rows } = geom;
   const keys: KeyRole[] = [];
   const lastCol = columns - 1;
-  const monCol = columns - 2;
+  const utilCol = columns - 2;
   const midRow = Math.floor((rows - 1) / 2);
 
-  const monitorPresets: KeyRole[] = [
+  // Utility column, top-down: one Slack monitor, then the Skills key.
+  const utilPresets: KeyRole[] = [
     { kind: "monitor", title: "Slack", command: join(monitorsDir, "slack-check.sh"), intervalSec: 600 },
-    { kind: "monitor", title: "CI", command: join(monitorsDir, "ci-status.sh"), intervalSec: 300 },
-    { kind: "monitor", title: "Git", command: "git -C \"$PWD\" status --porcelain | wc -l | awk '{print \"LABEL: \"$1\" dirty\"}'", intervalSec: 120 },
+    { kind: "skills" },
   ];
-  let monNext = 0;
+  let utilNext = 0;
 
   for (let i = 0; i < keyCount; i++) {
     const col = i % columns;
@@ -55,13 +58,13 @@ export function defaultLayout(geom: DeckGeometry): Layout {
       else if (row === rows - 1) keys.push({ kind: "pager", direction: "prev" });
       else if (row === midRow) keys.push({ kind: "attention" });
       else keys.push({ kind: "empty" });
-    } else if (col === monCol && monNext < monitorPresets.length) {
-      keys.push(monitorPresets[monNext++]!);
+    } else if (col === utilCol && utilNext < utilPresets.length) {
+      keys.push(utilPresets[utilNext++]!);
     } else {
       keys.push({ kind: "session" });
     }
   }
-  return { version: 1, keys };
+  return { version: LAYOUT_VERSION, keys };
 }
 
 /** Load the saved layout, or generate + persist a default on first run. */
@@ -70,8 +73,10 @@ export function loadLayout(geom: DeckGeometry): Layout {
   if (existsSync(path)) {
     try {
       const parsed = JSON.parse(readFileSync(path, "utf8")) as Layout;
-      if (parsed?.keys?.length === geom.keyCount) return parsed;
-      // Geometry changed (different deck) — fall through and regenerate.
+      if (parsed?.version === LAYOUT_VERSION && parsed?.keys?.length === geom.keyCount) {
+        return parsed;
+      }
+      // Older version or different deck geometry — regenerate the default.
     } catch {
       /* corrupt file — regenerate */
     }

@@ -122,10 +122,11 @@ export function pagerTile(
   glow: SessionStatus,
 ): string {
   const glowColor = STATUS_COLOR[glow];
+  // Vertical arrows: "next" points up (top-right key), "prev" points down.
   const arrow =
     direction === "next"
-      ? `<path d="M60 48 L92 72 L60 96 Z" fill="#E5E7EB"/>`
-      : `<path d="M84 48 L52 72 L84 96 Z" fill="#E5E7EB"/>`;
+      ? `<path d="M48 84 L72 52 L96 84 Z" fill="#E5E7EB"/>`
+      : `<path d="M48 60 L72 92 L96 60 Z" fill="#E5E7EB"/>`;
   const dots = Array.from({ length: Math.min(count, 6) }, (_, i) => {
     const x = 72 - (Math.min(count, 6) - 1) * 6 + i * 12;
     return `<circle cx="${x}" cy="128" r="3.5" fill="${i === index % 6 ? "#F9FAFB" : "#374151"}"/>`;
@@ -167,6 +168,20 @@ export function attentionTile(
       `<text x="72" y="58" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="#0B0D11">!</text>` +
       `<text x="72" y="108" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="${color}">${esc(urgent.status === "waiting" ? "Needs you" : "Error")}</text>` +
       `<text x="72" y="130" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#9CA3AF">${esc(clip(urgent.project, 14))}</text>`,
+  );
+}
+
+/** The Skills key: shows runnable skills for the selected/focused session. */
+export function skillsTile(subtitle: string, count?: number): string {
+  const spark =
+    `<path d="M72 40 L78 60 L98 66 L78 72 L72 92 L66 72 L46 66 L66 60 Z" fill="#A78BFA"/>` +
+    `<circle cx="100" cy="44" r="4" fill="#A78BFA"/>` +
+    `<circle cx="44" cy="92" r="3" fill="#A78BFA"/>`;
+  return toDataUri(
+    frame() +
+      `<text x="72" y="24" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#E5E7EB">Skills${count ? ` (${count})` : ""}</text>` +
+      spark +
+      `<text x="72" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#9CA3AF">${esc(clip(subtitle, 15))}</text>`,
   );
 }
 

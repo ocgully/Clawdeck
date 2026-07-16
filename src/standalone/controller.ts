@@ -6,6 +6,7 @@ import {
   pagerTile,
   attentionTile,
   monitorTile,
+  skillsTile,
   type MonitorLevel,
 } from "../icons/render";
 import { focusTerminal } from "../integrations/terminal";
@@ -123,6 +124,8 @@ export class Controller {
         const r = this.monitorState.get(index);
         return monitorTile(role.title, (r?.level ?? "info") as MonitorLevel, r?.caption ?? "…", this.tickPhase);
       }
+      case "skills":
+        return skillsTile("1-shot run");
       case "empty":
         return emptyTile();
     }
@@ -159,6 +162,10 @@ export class Controller {
         this.monitors.runByIndex(specs, index);
         break;
       }
+      case "skills":
+        // Interactive skills view is the next build; press is a no-op for now.
+        console.log("▶ skills: view coming next");
+        break;
       case "empty":
         break;
     }
