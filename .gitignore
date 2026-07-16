@@ -1,0 +1,9 @@
+node_modules/
+com.claudedeck.aikeyboard.sdPlugin/bin/
+.smoke/
+*.streamDeckPlugin
+*.log
+.DS_Store
+
+# GSD planning tooling (opt in per-project if desired)
+.planning/

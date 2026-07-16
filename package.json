@@ -1,0 +1,40 @@
+{
+  "name": "claudedeck",
+  "version": "0.1.0",
+  "description": "Turn an Elgato Stream Deck into a live control surface for your Claude Code sessions — color-coded status dashboard, virtual pages, scriptable monitor loops, and one-press jump-to-session.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Christopher Gulliver",
+  "keywords": [
+    "stream-deck",
+    "elgato",
+    "claude",
+    "claude-code",
+    "dashboard",
+    "iterm",
+    "developer-tools"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "rollup -c rollup.smoke.mjs && node .smoke/smoke.mjs",
+    "icons": "node ./scripts/generate-static-icons.mjs",
+    "link": "streamdeck link com.claudedeck.aikeyboard.sdPlugin",
+    "restart": "streamdeck restart com.claudedeck.aikeyboard",
+    "install-hooks": "node ./hooks/install.mjs",
+    "pack": "streamdeck pack com.claudedeck.aikeyboard.sdPlugin"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^2.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.16.0",
+    "rollup": "^4.24.0",
+    "tslib": "^2.7.0",
+    "typescript": "^5.6.0"
+  }
+}

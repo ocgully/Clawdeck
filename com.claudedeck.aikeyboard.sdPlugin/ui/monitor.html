@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+  </head>
+  <body>
+    <sdpi-item label="Title">
+      <sdpi-textfield setting="title" placeholder="Slack" maxlength="12"></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Command">
+      <sdpi-textarea
+        setting="command"
+        placeholder="~/.claude/claudedeck/monitors/slack-check.sh"
+        rows="3"
+      ></sdpi-textarea>
+    </sdpi-item>
+
+    <sdpi-item label="Every (seconds)">
+      <sdpi-textfield setting="intervalSec" type="number" default-value="600" min="5"></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item>
+      <sdpi-info>
+        The command runs in your login shell on the interval (and on press).
+        Print <code>STATUS: ok|warn|alert|info</code> to set the color and
+        <code>LABEL: text</code> to set the caption. No STATUS line? Exit 0 is
+        green, non-zero is red.
+      </sdpi-info>
+    </sdpi-item>
+  </body>
+</html>
