@@ -69,16 +69,23 @@ export function sessionTile(info: SessionInfo, spinnerPhase = 0): string {
 
   const caption = statusCaption(info);
   const now = Date.now();
-  const age = info.status === "waiting" ? elapsed(now - info.updatedAt) : "";
+  // Sub-line: elapsed wait while yellow, the error reason while red, else project.
+  let sub = clip(info.project, 14);
+  let subColor = "#6B7280";
+  if (info.status === "waiting") {
+    sub = elapsed(now - info.updatedAt);
+    subColor = "#9CA3AF";
+  } else if (info.status === "error" && info.note) {
+    sub = clip(info.note, 14);
+    subColor = color;
+  }
 
   return toDataUri(
     frame() +
       ring +
       `<text x="72" y="58" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-size="34" font-weight="700" fill="#F9FAFB">${esc(initials(info.project))}</text>` +
       `<text x="72" y="108" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="${color}">${esc(caption)}</text>` +
-      (age
-        ? `<text x="72" y="130" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#9CA3AF">${esc(age)}</text>`
-        : `<text x="72" y="130" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#6B7280">${esc(clip(info.project, 14))}</text>`),
+      `<text x="72" y="130" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="${subColor}">${esc(sub)}</text>`,
   );
 }
 

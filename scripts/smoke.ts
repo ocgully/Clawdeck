@@ -10,6 +10,10 @@ import { SessionStore } from "../src/state/session-store.ts";
 import { ViewState } from "../src/state/views.ts";
 import { sessionTile, attentionTile, monitorTile } from "../src/icons/render.ts";
 import type { HookMessage } from "../src/types.ts";
+import { TranscriptWatcher } from "../src/standalone/transcript-watcher.ts";
+import { mkdtempSync, writeFileSync, appendFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const store = new SessionStore();
 const server = new HookSocketServer();
@@ -81,6 +85,42 @@ for (const uri of [
   assert.ok(svg.includes("<svg") && svg.includes("</svg>"), "well-formed svg");
 }
 
+// Sticky error: an ApiError stays red through a turn-end (Stop), clears on a
+// new prompt.
+await send({ event: "ApiError", session_id: "b", note: "rate limit 3/10" });
+await wait(30);
+assert.equal(store.get("b")!.status, "error", "ApiError sets red");
+assert.equal(store.get("b")!.note, "rate limit 3/10", "error note surfaced");
+await send({ event: "Stop", session_id: "b" });
+await wait(30);
+assert.equal(store.get("b")!.status, "error", "Stop does not clear a real error (sticky)");
+await send({ event: "UserPromptSubmit", session_id: "b" });
+await wait(30);
+assert.equal(store.get("b")!.status, "running", "new prompt clears the error");
+
+// Transcript watcher: api_error line -> 'error', later assistant line -> 'recovered'.
+const tdir = mkdtempSync(join(tmpdir(), "cd-tw-"));
+const tpath = join(tdir, "session.jsonl");
+writeFileSync(tpath, "");
+const tw = new TranscriptWatcher();
+let errEvt: any, recEvt: any;
+tw.on("error", (e: any) => (errEvt = e));
+tw.on("recovered", (e: any) => (recEvt = e));
+tw.track("sess-x", tpath);
+
+appendFileSync(
+  tpath,
+  JSON.stringify({ type: "system", subtype: "api_error", error: { status: 429 }, retryAttempt: 3, maxRetries: 10 }) + "\n",
+);
+tw.poll();
+assert.equal(errEvt?.sessionId, "sess-x", "watcher emits error for api_error line");
+assert.equal(errEvt?.label, "rate limit 3/10", "watcher labels 429 with retry count");
+
+appendFileSync(tpath, JSON.stringify({ type: "assistant", message: {} }) + "\n");
+tw.poll();
+assert.equal(recEvt?.sessionId, "sess-x", "watcher emits recovered on progress after error");
+tw.stop();
+
 server.stop();
-console.log("✓ smoke: 12 assertions passed — socket, store, statuses, views, icons all good");
+console.log("✓ smoke: 19 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher");
 process.exit(0);

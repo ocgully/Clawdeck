@@ -17,7 +17,8 @@ import {
  *   Notification              -> waiting (needs a decision from you)
  *   Stop / SubagentStop       -> idle    (turn finished, sitting there)
  *   SessionEnd                -> ended   (pruned shortly after)
- *   any event with exit_code != 0 -> error
+ *   ApiError                  -> error   (synthetic, from the transcript watcher)
+ *   ApiRecovered              -> running (synthetic, the API call succeeded again)
  */
 const EVENT_STATUS: Record<string, SessionStatus> = {
   SessionStart: "idle",
@@ -29,6 +30,8 @@ const EVENT_STATUS: Record<string, SessionStatus> = {
   SubagentStop: "running",
   PreCompact: "running",
   SessionEnd: "ended",
+  ApiError: "error",
+  ApiRecovered: "running",
 };
 
 /** Sessions that go quiet for this long are assumed dead and pruned. */
@@ -56,6 +59,15 @@ export class SessionStore extends EventEmitter {
     if (typeof msg.exit_code === "number" && msg.exit_code !== 0) {
       status = "error";
     }
+    // Sticky error: a real API error stays red until the session actually moves
+    // forward (a new prompt, or the watcher's ApiRecovered). A plain turn-end
+    // (Stop) must not quietly downgrade a stuck session to idle.
+    if (
+      existing?.status === "error" &&
+      (msg.event === "Stop" || msg.event === "SubagentStop")
+    ) {
+      status = "error";
+    }
 
     const info: SessionInfo = {
       id: msg.session_id,
@@ -67,7 +79,10 @@ export class SessionStore extends EventEmitter {
       updatedAt: now,
       model: msg.model ?? existing?.model,
       term: mergeTerm(existing?.term, msg.term),
-      note: status === "waiting" ? msg.note ?? existing?.note : undefined,
+      note:
+        status === "waiting" || status === "error"
+          ? msg.note ?? existing?.note
+          : undefined,
     };
 
     this.sessions.set(msg.session_id, info);

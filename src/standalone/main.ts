@@ -12,6 +12,7 @@ import { MonitorRunner } from "./monitor-runner";
 import { Controller } from "./controller";
 import { checkInputMonitoring, inputMonitoringHelp } from "./permissions";
 import { seedDemo } from "./demo";
+import { TranscriptWatcher, type ApiErrorEvent } from "./transcript-watcher";
 
 async function main(): Promise<void> {
   const deck = new Deck();
@@ -40,9 +41,24 @@ async function main(): Promise<void> {
     console.log("ClaudeDeck: demo mode — seeded fake sessions (2 pages, 1 waiting, 2 errored).");
   }
 
+  // Tail transcripts for in-session API errors (red) — the one status hooks
+  // can't give us. Sessions are tracked as their hook events reveal the path.
+  const transcripts = new TranscriptWatcher();
+  transcripts.on("error", (e: ApiErrorEvent) =>
+    store.apply({ type: "event", event: "ApiError", session_id: e.sessionId, note: e.label, ts: Date.now() }),
+  );
+  transcripts.on("recovered", (e: { sessionId: string }) =>
+    store.apply({ type: "event", event: "ApiRecovered", session_id: e.sessionId, ts: Date.now() }),
+  );
+  transcripts.start();
+  store.on("change", () => transcripts.retainOnly(new Set(store.list().map((s) => s.id))));
+
   // Claude Code hooks stream session events into this socket.
   const server = new HookSocketServer();
-  server.on("message", (msg) => store.apply(msg));
+  server.on("message", (msg) => {
+    store.apply(msg);
+    if (msg.transcript_path) transcripts.track(msg.session_id, msg.transcript_path);
+  });
   server.on("listening", (path) => console.log(`ClaudeDeck: listening for hooks at ${path}`));
   server.on("error", (err) => console.error(`ClaudeDeck: socket error: ${err.message}`));
   server.start();
@@ -52,6 +68,7 @@ async function main(): Promise<void> {
 
   const shutdown = async () => {
     monitors.stop();
+    transcripts.stop();
     server.stop();
     await deck.close();
     process.exit(0);
