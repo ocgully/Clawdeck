@@ -7,3 +7,5 @@ com.claudedeck.aikeyboard.sdPlugin/bin/
 
 # GSD planning tooling (opt in per-project if desired)
 .planning/
+dist/
+.pol/

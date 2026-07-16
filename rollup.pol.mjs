@@ -2,18 +2,12 @@ import commonjs from "@rollup/plugin-commonjs";
 import nodeResolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 
-// Native/runtime deps stay external — they load from node_modules at runtime.
+// Native/runtime deps must stay external — they can't be bundled.
 const external = [/^@elgato-stream-deck/, "sharp", "node-hid", /^node:/];
 
-/** @type {import('rollup').RollupOptions} */
 export default {
-  input: "src/standalone/main.ts",
-  output: {
-    file: "dist/claudedeck.mjs",
-    format: "esm",
-    banner: "#!/usr/bin/env node",
-    sourcemap: true,
-  },
+  input: "scripts/proof-of-life.ts",
+  output: { file: ".pol/pol.mjs", format: "esm" },
   external,
   plugins: [
     typescript({
@@ -22,9 +16,9 @@ export default {
         module: "ESNext",
         target: "ES2022",
         moduleResolution: "bundler",
-        strict: true,
+        allowImportingTsExtensions: true,
+        strict: false,
         skipLibCheck: true,
-        sourceMap: true,
       },
     }),
     nodeResolve({ exportConditions: ["node"], preferBuiltins: true }),

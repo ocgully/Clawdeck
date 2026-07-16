@@ -1,8 +1,16 @@
 {
   "name": "claudedeck",
-  "version": "0.1.0",
-  "description": "Turn an Elgato Stream Deck into a live control surface for your Claude Code sessions — color-coded status dashboard, virtual pages, scriptable monitor loops, and one-press jump-to-session.",
+  "version": "0.2.0",
+  "description": "Standalone takeover app that turns an Elgato Stream Deck into live mission-control for your Claude Code sessions — color-coded status dashboard, virtual pages, scriptable monitor loops, one-press jump-to-session. Replaces the Elgato desktop app; talks to the deck directly over USB.",
   "type": "module",
+  "bin": {
+    "claudedeck": "dist/claudedeck.mjs"
+  },
+  "files": [
+    "dist/",
+    "hooks/",
+    "monitors/"
+  ],
   "license": "MIT",
   "author": "Christopher Gulliver",
   "keywords": [
@@ -17,18 +25,17 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
+    "start": "node dist/claudedeck.mjs",
+    "dev": "rollup -c && node dist/claudedeck.mjs",
     "test": "rollup -c rollup.smoke.mjs && node .smoke/smoke.mjs",
-    "icons": "node ./scripts/generate-static-icons.mjs",
-    "link": "streamdeck link com.claudedeck.aikeyboard.sdPlugin",
-    "restart": "streamdeck restart com.claudedeck.aikeyboard",
-    "install-hooks": "node ./hooks/install.mjs",
-    "pack": "streamdeck pack com.claudedeck.aikeyboard.sdPlugin"
+    "pol": "rollup -c rollup.pol.mjs && node .pol/pol.mjs",
+    "install-hooks": "node ./hooks/install.mjs"
   },
   "dependencies": {
-    "@elgato/streamdeck": "^2.1.0"
+    "@elgato-stream-deck/node": "^7.6.3",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
-    "@elgato/cli": "^1.7.0",
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-typescript": "^12.1.0",
