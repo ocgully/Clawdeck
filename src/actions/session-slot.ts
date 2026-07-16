@@ -9,9 +9,9 @@ import {
 import { hub } from "../hub";
 import { focusTerminal } from "../integrations/terminal";
 
-interface SlotSettings {
-  boundSessionId?: string | null;
-}
+// Session slots hold no persistent settings — assignment is computed live
+// from the slot's position on the deck and the current dashboard page.
+type SlotSettings = Record<string, never>;
 
 /**
  * A session-slot key. Place several on the deck and they auto-fill with your

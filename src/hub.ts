@@ -59,21 +59,21 @@ class Hub extends EventEmitter {
     return this.store.list().filter((s) => s.status !== "ended");
   }
 
-  /** Assign sessions to slots for the active view/page and paint each one. */
-  redrawSlots(): void {
+  /**
+   * Assign sessions to slots for the active view/page and paint each one.
+   * When `animatedOnly` is set (the animation clock), we skip static tiles and
+   * only repaint running ones — keeping the spinner alive without flooding the
+   * Stream Deck with redundant setImage calls.
+   */
+  redrawSlots(animatedOnly = false): void {
     const ordered = [...this.slots.values()].sort(byDeckPosition);
     const sessions = this.liveSessions();
-    const page = this.views.current().page;
-    const offset = page * ordered.length;
+    const offset = this.views.current().page * ordered.length;
 
     ordered.forEach((action, i) => {
       const info = sessions[offset + i];
-      const image = info
-        ? sessionTile(info, this.tickPhase)
-        : emptyTile();
-      void action.setImage(image);
-      // Stash the session id so onKeyDown can jump to the right iTerm pane.
-      void action.setSettings({ boundSessionId: info?.id ?? null });
+      if (animatedOnly && info?.status !== "running") return;
+      void action.setImage(info ? sessionTile(info, this.tickPhase) : emptyTile());
     });
   }
 
@@ -112,7 +112,7 @@ class Hub extends EventEmitter {
     }
     this.ticking = true;
     this.tickPhase = (this.tickPhase + 0.06) % 1;
-    if (running) this.redrawSlots();
+    if (running) this.redrawSlots(true);
     this.emit("tick");
   }
 
