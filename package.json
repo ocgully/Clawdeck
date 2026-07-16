@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@elgato-stream-deck/node": "^7.6.3",
+    "node-mac-permissions": "^2.5.0",
     "sharp": "^0.35.3"
   },
   "devDependencies": {

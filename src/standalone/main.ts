@@ -10,6 +10,7 @@ import { Deck } from "./device";
 import { loadLayout } from "./layout";
 import { MonitorRunner } from "./monitor-runner";
 import { Controller } from "./controller";
+import { checkInputMonitoring, inputMonitoringHelp } from "./permissions";
 
 async function main(): Promise<void> {
   const deck = new Deck();
@@ -17,6 +18,13 @@ async function main(): Promise<void> {
   console.log(
     `ClaudeDeck: opened ${geom.keyCount}-key deck (${geom.columns}x${geom.rows}, ${geom.iconSize}px)`,
   );
+
+  // Preflight: warn (and prompt) if macOS won't deliver button presses yet.
+  const perm = checkInputMonitoring(true);
+  if (!perm.authorized) {
+    console.warn(`ClaudeDeck: Input Monitoring not granted (status: ${perm.status}).`);
+    console.warn(inputMonitoringHelp());
+  }
 
   const store = new SessionStore();
   const views = new ViewState();

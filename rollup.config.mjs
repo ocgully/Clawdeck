@@ -3,7 +3,7 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
 
 // Native/runtime deps stay external — they load from node_modules at runtime.
-const external = [/^@elgato-stream-deck/, "sharp", "node-hid", /^node:/];
+const external = [/^@elgato-stream-deck/, "sharp", "node-hid", "node-mac-permissions", /^node:/];
 
 /** @type {import('rollup').RollupOptions} */
 export default {
