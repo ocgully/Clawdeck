@@ -185,6 +185,46 @@ export function skillsTile(subtitle: string, count?: number): string {
   );
 }
 
+/** A context-view item: quick action (blue), suggestion (amber), or skill (violet). */
+export function actionTile(
+  label: string,
+  kind: "action" | "suggestion" | "skill",
+): string {
+  const color = kind === "skill" ? "#A78BFA" : kind === "suggestion" ? "#EAB308" : "#38BDF8";
+  const tag = kind === "skill" ? "skill" : kind === "suggestion" ? "suggest" : "action";
+  const words = wrap(label, 10, 3);
+  const lines = words
+    .map(
+      (line, i) =>
+        `<text x="72" y="${64 + (i - (words.length - 1) / 2) * 20}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#F9FAFB">${esc(line)}</text>`,
+    )
+    .join("");
+  return toDataUri(
+    frame() +
+      `<rect x="2" y="2" width="${SIZE - 4}" height="${SIZE - 4}" rx="18" fill="none" stroke="${color}" stroke-width="3" opacity="0.8"/>` +
+      lines +
+      `<text x="72" y="128" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="${color}">${tag}</text>`,
+  );
+}
+
+/** The back button shown top-right in a session's context view. */
+export function backTile(project: string): string {
+  return toDataUri(
+    frame("#0B0D11") +
+      `<path d="M84 44 L52 72 L84 100" fill="none" stroke="#E5E7EB" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<text x="72" y="124" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#9CA3AF">${esc(clip(project, 14))}</text>`,
+  );
+}
+
+/** A "more items" pager for the context view. */
+export function moreTile(page: number, pages: number): string {
+  return toDataUri(
+    frame() +
+      `<path d="M48 60 L72 92 L96 60 Z" fill="#E5E7EB"/>` +
+      `<text x="72" y="118" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#9CA3AF">more ${page + 1}/${pages}</text>`,
+  );
+}
+
 export type MonitorLevel = "ok" | "warn" | "alert" | "info" | "running" | "unknown";
 
 const MONITOR_COLOR: Record<MonitorLevel, string> = {
@@ -218,4 +258,26 @@ export function monitorTile(
 
 function clip(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+/** Greedy word-wrap into at most maxLines lines of ~perLine chars each. */
+function wrap(s: string, perLine: number, maxLines: number): string[] {
+  const words = s.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let cur = "";
+  let i = 0;
+  for (; i < words.length; i++) {
+    const candidate = cur ? `${cur} ${words[i]}` : words[i]!;
+    if (candidate.length > perLine && cur) {
+      lines.push(cur);
+      cur = words[i]!;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      cur = candidate;
+    }
+  }
+  // Put whatever remains on the final line, clipped if it overflows.
+  const remainder = [cur, ...words.slice(i + 1)].filter(Boolean).join(" ");
+  if (remainder) lines.push(clip(remainder, perLine));
+  return lines.length ? lines : [clip(s, perLine)];
 }

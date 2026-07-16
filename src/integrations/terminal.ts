@@ -63,6 +63,60 @@ tell application "Terminal"
 end tell`.trim();
 }
 
+/**
+ * Type text into a session's terminal and submit it (used to 1-shot run a skill
+ * or send a chosen prompt into a live Claude session). iTerm's `write text` and
+ * Terminal's `do script ... in` both append a return, which submits the prompt.
+ */
+export function sendText(target: TermTarget | undefined, text: string): void {
+  if (!target) return;
+  const isAppleTerminal = target.termProgram === "Apple_Terminal";
+  const script = isAppleTerminal
+    ? appleTerminalSend(target, text)
+    : itermSend(target, text);
+  if (!script) return;
+  execFile("/usr/bin/osascript", ["-e", script], (err) => {
+    if (err) process.stderr.write(`[claudedeck] send failed: ${err.message}\n`);
+  });
+}
+
+function itermSend(target: TermTarget, text: string): string | undefined {
+  if (!target.guid && !target.tty) return undefined;
+  const tty = target.tty ? esc(target.tty) : "";
+  const guid = target.guid ? esc(target.guid) : "";
+  const payload = esc(text);
+  return `
+tell application "iTerm2"
+  repeat with w in windows
+    repeat with t in tabs of w
+      repeat with s in sessions of t
+        if (${guid ? `id of s is "${guid}"` : "false"}) or (${tty ? `tty of s is "${tty}"` : "false"}) then
+          tell s to write text "${payload}"
+          return
+        end if
+      end repeat
+    end repeat
+  end repeat
+end tell`.trim();
+}
+
+function appleTerminalSend(target: TermTarget, text: string): string | undefined {
+  if (!target.tty) return undefined;
+  const tty = esc(target.tty);
+  const payload = esc(text);
+  return `
+tell application "Terminal"
+  repeat with w in windows
+    repeat with t in tabs of w
+      if tty of t is "${tty}" then
+        do script "${payload}" in t
+        return
+      end if
+    end repeat
+  end repeat
+end tell`.trim();
+}
+
 function esc(s: string): string {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }

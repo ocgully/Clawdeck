@@ -54,6 +54,8 @@ export interface SessionInfo {
   updatedAt: number;
   model?: string;
   term?: TermTarget;
+  /** Path to this session's transcript JSONL — read for suggested next steps. */
+  transcriptPath?: string;
   /** Free-form note surfaced on the tile (e.g. the pending permission prompt). */
   note?: string;
 }

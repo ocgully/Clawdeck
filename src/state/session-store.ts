@@ -79,6 +79,7 @@ export class SessionStore extends EventEmitter {
       updatedAt: now,
       model: msg.model ?? existing?.model,
       term: mergeTerm(existing?.term, msg.term),
+      transcriptPath: msg.transcript_path ?? existing?.transcriptPath,
       note:
         status === "waiting" || status === "error"
           ? msg.note ?? existing?.note

@@ -11,6 +11,7 @@ import { ViewState } from "../src/state/views.ts";
 import { sessionTile, attentionTile, monitorTile } from "../src/icons/render.ts";
 import type { HookMessage } from "../src/types.ts";
 import { TranscriptWatcher } from "../src/standalone/transcript-watcher.ts";
+import { parseSuggestions, QUICK_ACTIONS } from "../src/standalone/suggestions.ts";
 import { mkdtempSync, writeFileSync, appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -121,6 +122,25 @@ tw.poll();
 assert.equal(recEvt?.sessionId, "sess-x", "watcher emits recovered on progress after error");
 tw.stop();
 
+// Suggestions: parse bullets + a question from the last assistant message,
+// skipping a trailing tool-only message (as real transcripts have).
+const spath = join(tdir, "conv.jsonl");
+writeFileSync(
+  spath,
+  [
+    JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "Here's the plan.\n1. Add the missing tests\n2. Refactor the parser\nShould I start with the tests?" }] } }),
+    JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "x" }] } }),
+  ].join("\n") + "\n",
+);
+const suggestions = parseSuggestions(spath);
+assert.ok(suggestions.length >= 2, "parses suggestions from last text message, skipping tool-only");
+assert.ok(
+  suggestions.some((s) => /tests/i.test(s.text)) && suggestions.some((s) => s.text.endsWith("?")),
+  "captures both a bullet option and the question",
+);
+assert.ok(suggestions.every((s) => s.kind === "suggestion"), "suggestions tagged correctly");
+assert.equal(QUICK_ACTIONS[0]!.text, "continue", "quick actions available as a reliable baseline");
+
 server.stop();
-console.log("✓ smoke: 19 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher");
+console.log("✓ smoke: 23 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher, suggestions");
 process.exit(0);
