@@ -78,21 +78,28 @@ the whole trick:
 
 ## Install
 
-**Requirements:** macOS, [Stream Deck software](https://www.elgato.com/downloads)
-6.5+, Node 20+, and the Elgato CLI (`npm i -g @elgato/cli`).
+**Requirements:** macOS, Node 20+, and — critically — the **Stream Deck
+desktop software** installed and launched at least once. Download it from
+[elgato.com/downloads](https://www.elgato.com/downloads); it's the app that
+hosts plugins, separate from the hardware. (The Elgato `streamdeck` CLI ships
+as a local dev-dependency, so no global install is needed.)
 
 ```bash
 git clone https://github.com/christophergulliver/claudedeck
 cd claudedeck
-npm install
-npm run icons        # generate the static catalog icons
-npm run build        # bundle the plugin backend
-npm run link         # register the plugin with the Stream Deck app
+npm install             # also installs the Elgato CLI locally
+npm run icons           # generate the static catalog icons
+npm run build           # bundle the plugin backend
+npm run link            # register the plugin with the Stream Deck app
 npm run install-hooks   # wire ClaudeDeck into ~/.claude/settings.json
 ```
 
 Restart any open Claude Code sessions so the new hooks load. Then open the
 Stream Deck app — you'll find the **ClaudeDeck** category with four actions.
+
+> If `npm run link` reports a missing `com.elgato.StreamDeck/Plugins`
+> directory, the desktop software isn't installed yet — install and launch it
+> first, then re-run.
 
 During development, `npm run watch` rebuilds on save and `npm run restart`
 reloads the plugin.
