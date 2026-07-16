@@ -74,13 +74,17 @@ export class SessionStore extends EventEmitter {
     this.emit("change");
   }
 
-  /** Newest-activity-first, ended sessions sink to the bottom. */
+  /**
+   * Stable first-seen order: sessions fill the deck left-to-right, top-to-bottom
+   * and stay put — a new session appends to the next free slot rather than
+   * shuffling the others. Ended sessions sink to the bottom before they prune.
+   */
   list(): SessionInfo[] {
     return [...this.sessions.values()].sort((a, b) => {
       if ((a.status === "ended") !== (b.status === "ended")) {
         return a.status === "ended" ? 1 : -1;
       }
-      return b.updatedAt - a.updatedAt;
+      return a.startedAt - b.startedAt;
     });
   }
 
