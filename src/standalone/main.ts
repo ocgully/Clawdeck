@@ -11,6 +11,7 @@ import { loadLayout } from "./layout";
 import { MonitorRunner } from "./monitor-runner";
 import { Controller } from "./controller";
 import { checkInputMonitoring, inputMonitoringHelp } from "./permissions";
+import { seedDemo } from "./demo";
 
 async function main(): Promise<void> {
   const deck = new Deck();
@@ -33,6 +34,11 @@ async function main(): Promise<void> {
 
   const controller = new Controller(deck, store, views, monitors, layout);
   await controller.start();
+
+  if (process.env.CLAUDEDECK_DEMO) {
+    seedDemo(store);
+    console.log("ClaudeDeck: demo mode — seeded fake sessions (2 pages, 1 waiting, 2 errored).");
+  }
 
   // Claude Code hooks stream session events into this socket.
   const server = new HookSocketServer();

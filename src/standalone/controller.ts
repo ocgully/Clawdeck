@@ -131,6 +131,10 @@ export class Controller {
   private onPress(index: number): void {
     const role = this.layout.keys[index];
     if (!role) return;
+    // Unmistakable feedback: log it and flash the key, so a press is visible
+    // even when there's no state for it to act on yet.
+    console.log(`▶ press: key ${index} (${role.kind})`);
+    void this.flash(index);
     switch (role.kind) {
       case "session": {
         const slotPos = this.sessionSlots.indexOf(index);
@@ -160,6 +164,16 @@ export class Controller {
       }
       case "empty":
         break;
+    }
+  }
+
+  /** Briefly flash a key white, then repaint its real face — press feedback. */
+  private async flash(index: number): Promise<void> {
+    try {
+      await this.deck.fillColor(index, 255, 255, 255);
+      setTimeout(() => void this.renderKey(index), 150);
+    } catch {
+      /* ignore transient render errors */
     }
   }
 
