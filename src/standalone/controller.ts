@@ -114,9 +114,13 @@ export class Controller {
   }
 
   private async renderPins(): Promise<void> {
+    // Keys whose face depends on aggregate state (not a single slot): pagers'
+    // ambient glow, the attention key, and the skills key's visibility.
     for (let i = 0; i < this.layout.keys.length; i++) {
       const role = this.layout.keys[i]!;
-      if (role.kind === "pager" || role.kind === "attention") await this.renderKey(i);
+      if (role.kind === "pager" || role.kind === "attention" || role.kind === "skills") {
+        await this.renderKey(i);
+      }
     }
   }
 
@@ -149,7 +153,8 @@ export class Controller {
         return monitorTile(role.title, (r?.level ?? "info") as MonitorLevel, r?.caption ?? "…", this.tickPhase);
       }
       case "skills":
-        return skillsTile(this.selectedProject());
+        // Hide the key entirely when there's nothing to act on.
+        return this.liveSessions().length ? skillsTile(this.selectedProject()) : emptyTile();
       case "empty":
         return emptyTile();
     }
@@ -173,8 +178,14 @@ export class Controller {
     return this.liveSessions()[offset + slotPos];
   }
 
+  /** The session the Skills key acts on: last-focused if still live, else the first. */
+  private pickSelectedSession(): string | undefined {
+    if (this.lastFocused && this.store.get(this.lastFocused)) return this.lastFocused;
+    return this.liveSessions()[0]?.id;
+  }
+
   private selectedProject(): string {
-    const id = this.lastFocused ?? this.liveSessions()[0]?.id;
+    const id = this.pickSelectedSession();
     const s = id ? this.store.get(id) : undefined;
     return s ? s.project : "no session";
   }
@@ -264,9 +275,8 @@ export class Controller {
         this.monitors.runByIndex(this.monitorSpecs(), index);
         break;
       case "skills": {
-        const id = this.lastFocused ?? this.liveSessions()[0]?.id;
+        const id = this.pickSelectedSession();
         if (id) this.enterContext(id);
-        else console.log("▶ skills: no session to act on");
         break;
       }
       case "empty":
