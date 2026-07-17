@@ -17,7 +17,7 @@ export function focusTerminal(target: TermTarget | undefined): void {
   if (!script) return;
 
   execFile("/usr/bin/osascript", ["-e", script], (err) => {
-    if (err) process.stderr.write(`[claudedeck] terminal focus failed: ${err.message}\n`);
+    if (err) process.stderr.write(`[clawdeck] terminal focus failed: ${err.message}\n`);
   });
 }
 
@@ -76,7 +76,7 @@ export function sendText(target: TermTarget | undefined, text: string): void {
     : itermSend(target, text);
   if (!script) return;
   execFile("/usr/bin/osascript", ["-e", script], (err) => {
-    if (err) process.stderr.write(`[claudedeck] send failed: ${err.message}\n`);
+    if (err) process.stderr.write(`[clawdeck] send failed: ${err.message}\n`);
   });
 }
 

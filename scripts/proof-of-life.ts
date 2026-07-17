@@ -1,5 +1,5 @@
 /**
- * Proof of life: render a full mock ClaudeDeck dashboard onto the physical
+ * Proof of life: render a full mock Clawdeck dashboard onto the physical
  * Stream Deck and respond to key presses. This is the standalone takeover in
  * miniature — no Elgato app involved. Bundled + run via `npm run pol`.
  */

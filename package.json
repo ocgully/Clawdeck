@@ -1,10 +1,10 @@
 {
-  "name": "claudedeck",
+  "name": "clawdeck",
   "version": "0.2.0",
   "description": "Standalone takeover app that turns an Elgato Stream Deck into live mission-control for your Claude Code sessions — color-coded status dashboard, virtual pages, scriptable monitor loops, one-press jump-to-session. Replaces the Elgato desktop app; talks to the deck directly over USB.",
   "type": "module",
   "bin": {
-    "claudedeck": "dist/claudedeck.mjs"
+    "clawdeck": "dist/clawdeck.mjs"
   },
   "files": [
     "dist/",
@@ -25,8 +25,8 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "start": "node dist/claudedeck.mjs",
-    "dev": "rollup -c && node dist/claudedeck.mjs",
+    "start": "node dist/clawdeck.mjs",
+    "dev": "rollup -c && node dist/clawdeck.mjs",
     "test": "rollup -c rollup.smoke.mjs && node .smoke/smoke.mjs",
     "pol": "rollup -c rollup.pol.mjs && node .pol/pol.mjs",
     "install-hooks": "node ./hooks/install.mjs",

@@ -9,15 +9,19 @@ import sharp from "sharp";
 const cache = new Map<string, Buffer>();
 const MAX_CACHE = 512;
 
-export async function rasterize(dataUri: string, size: number): Promise<Buffer> {
-  const key = `${size}:${dataUri}`;
+export async function rasterize(
+  dataUri: string,
+  width: number,
+  height = width,
+): Promise<Buffer> {
+  const key = `${width}x${height}:${dataUri}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
   const comma = dataUri.indexOf(",");
   const svg = Buffer.from(dataUri.slice(comma + 1), "base64");
   const buf = await sharp(svg, { density: 144 })
-    .resize(size, size, { fit: "fill" })
+    .resize(width, height, { fit: "fill" })
     .ensureAlpha()
     .raw()
     .toBuffer();

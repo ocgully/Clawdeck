@@ -1,5 +1,5 @@
 /**
- * ClaudeDeck standalone daemon. Owns the Stream Deck over USB HID (no Elgato
+ * Clawdeck standalone daemon. Owns the Stream Deck over USB HID (no Elgato
  * app), receives Claude Code session events over a unix socket, and drives the
  * physical keys. This is the whole product entry point.
  */
@@ -18,13 +18,13 @@ async function main(): Promise<void> {
   const deck = new Deck();
   const geom = await deck.open();
   console.log(
-    `ClaudeDeck: opened ${geom.keyCount}-key deck (${geom.columns}x${geom.rows}, ${geom.iconSize}px)`,
+    `Clawdeck: opened ${geom.keyCount}-key deck (${geom.columns}x${geom.rows}, ${geom.iconSize}px)`,
   );
 
   // Preflight: warn (and prompt) if macOS won't deliver button presses yet.
   const perm = checkInputMonitoring(true);
   if (!perm.authorized) {
-    console.warn(`ClaudeDeck: Input Monitoring not granted (status: ${perm.status}).`);
+    console.warn(`Clawdeck: Input Monitoring not granted (status: ${perm.status}).`);
     console.warn(inputMonitoringHelp());
   }
 
@@ -36,9 +36,9 @@ async function main(): Promise<void> {
   const controller = new Controller(deck, store, views, monitors, layout);
   await controller.start();
 
-  if (process.env.CLAUDEDECK_DEMO) {
+  if (process.env.CLAWDECK_DEMO) {
     seedDemo(store);
-    console.log("ClaudeDeck: demo mode — seeded fake sessions (2 pages, 1 waiting, 2 errored).");
+    console.log("Clawdeck: demo mode — seeded fake sessions (2 pages, 1 waiting, 2 errored).");
   }
 
   // Tail transcripts for in-session API errors (red) — the one status hooks
@@ -59,11 +59,11 @@ async function main(): Promise<void> {
     store.apply(msg);
     if (msg.transcript_path) transcripts.track(msg.session_id, msg.transcript_path);
   });
-  server.on("listening", (path) => console.log(`ClaudeDeck: listening for hooks at ${path}`));
-  server.on("error", (err) => console.error(`ClaudeDeck: socket error: ${err.message}`));
+  server.on("listening", (path) => console.log(`Clawdeck: listening for hooks at ${path}`));
+  server.on("error", (err) => console.error(`Clawdeck: socket error: ${err.message}`));
   server.start();
 
-  console.log(`ClaudeDeck: running. Socket: ${socketPath()}`);
+  console.log(`Clawdeck: running. Socket: ${socketPath()}`);
   console.log("Press Ctrl-C to stop (the deck keeps its last frame).");
 
   const shutdown = async () => {
@@ -78,6 +78,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error(`ClaudeDeck failed to start: ${err.message}`);
+  console.error(`Clawdeck failed to start: ${err.message}`);
   process.exit(1);
 });

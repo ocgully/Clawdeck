@@ -12,6 +12,7 @@ import { sessionTile, attentionTile, monitorTile } from "../src/icons/render.ts"
 import type { HookMessage } from "../src/types.ts";
 import { TranscriptWatcher } from "../src/standalone/transcript-watcher.ts";
 import { parseSuggestions, QUICK_ACTIONS } from "../src/standalone/suggestions.ts";
+import { defaultLayout } from "../src/standalone/layout.ts";
 import { mkdtempSync, writeFileSync, appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -141,6 +142,56 @@ assert.ok(
 assert.ok(suggestions.every((s) => s.kind === "suggestion"), "suggestions tagged correctly");
 assert.equal(QUICK_ACTIONS[0]!.text, "continue", "quick actions available as a reliable baseline");
 
+// Layout generation across deck shapes. Neo is NOT a dense grid: a 4x2 drawable
+// grid plus two RGB-only side buttons on row 2, so index math would misplace them.
+const neoGeom = {
+  model: "neo",
+  keyCount: 10,
+  columns: 4,
+  rows: 3,
+  iconSize: 96,
+  keys: [
+    ...Array.from({ length: 8 }, (_, i) => ({
+      index: i,
+      row: Math.floor(i / 4),
+      column: i % 4,
+      renderable: true,
+      size: 96,
+    })),
+    { index: 8, row: 2, column: 0, renderable: false, size: 0 },
+    { index: 9, row: 2, column: 3, renderable: false, size: 0 },
+  ],
+  lcd: { index: 0, width: 248, height: 58 },
+};
+const neo = defaultLayout(neoGeom);
+assert.equal(neo.keys[8]!.kind, "pager", "Neo: left RGB side button is a pager");
+assert.equal((neo.keys[8] as any).direction, "prev", "Neo: left side button pages back");
+assert.equal((neo.keys[9] as any).direction, "next", "Neo: right side button pages forward");
+assert.equal(neo.keys[3]!.kind, "attention", "Neo: attention top-right of the LCD grid");
+assert.equal(neo.keys[7]!.kind, "skills", "Neo: skills bottom-right of the LCD grid");
+assert.equal(neo.keys.filter((k) => k.kind === "session").length, 6, "Neo: 6 session slots");
+
+const mk2Geom = {
+  model: "originalv2",
+  keyCount: 15,
+  columns: 5,
+  rows: 3,
+  iconSize: 72,
+  keys: Array.from({ length: 15 }, (_, i) => ({
+    index: i,
+    row: Math.floor(i / 5),
+    column: i % 5,
+    renderable: true,
+    size: 72,
+  })),
+};
+const mk2 = defaultLayout(mk2Geom);
+assert.equal((mk2.keys[4] as any).direction, "next", "MK.2: page-up top-right");
+assert.equal(mk2.keys[9]!.kind, "attention", "MK.2: attention middle-right");
+assert.equal((mk2.keys[14] as any).direction, "prev", "MK.2: page-down bottom-right");
+assert.equal(mk2.keys[3]!.kind, "monitor", "MK.2: Slack monitor in utility column");
+assert.equal(mk2.keys[8]!.kind, "skills", "MK.2: skills under the monitor");
+
 server.stop();
-console.log("✓ smoke: 23 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher, suggestions");
+console.log("✓ smoke: 34 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher, suggestions, layouts (Neo + MK.2)");
 process.exit(0);

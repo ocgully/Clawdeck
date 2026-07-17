@@ -4,7 +4,7 @@ import type { SessionStore } from "../state/session-store";
  * Seed the store with a spread of fake sessions so the deck is fully
  * interactive without any real Claude sessions running — enough to overflow
  * onto a second page (so the pager visibly does something) and including a
- * waiting session (so the Attention key lights up). Enabled with CLAUDEDECK_DEMO=1.
+ * waiting session (so the Attention key lights up). Enabled with CLAWDECK_DEMO=1.
  */
 export function seedDemo(store: SessionStore): void {
   const now = Date.now();

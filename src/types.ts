@@ -1,5 +1,5 @@
 /**
- * Shared vocabulary for ClaudeDeck. The session lifecycle status is the
+ * Shared vocabulary for Clawdeck. The session lifecycle status is the
  * spine of the whole plugin — icon colors, the attention button, and the
  * ambient glow are all derived from it.
  */
@@ -75,5 +75,5 @@ export interface HookMessage {
   term?: TermTarget;
 }
 
-export const SOCKET_DIR = ".claude/claudedeck";
+export const SOCKET_DIR = ".claude/clawdeck";
 export const SOCKET_FILE = "deck.sock";

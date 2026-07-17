@@ -6,7 +6,7 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "sourceMap": true,
-    "outDir": "com.claudedeck.aikeyboard.sdPlugin/bin",
+    "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "noUncheckedIndexedAccess": true,

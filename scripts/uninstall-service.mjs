@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-/** Stop and remove the ClaudeDeck launchd agent. Run: npm run service:uninstall */
+/** Stop and remove the Clawdeck launchd agent. Run: npm run service:uninstall */
 import { execSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const LABEL = "com.claudedeck.daemon";
+const LABEL = "com.clawdeck.daemon";
 const plistPath = join(homedir(), "Library", "LaunchAgents", `${LABEL}.plist`);
 const uid = process.getuid?.() ?? 501;
 
@@ -18,7 +18,7 @@ if (existsSync(plistPath)) {
 } else {
   console.log("No launchd agent installed.");
 }
-console.log("✓ ClaudeDeck service stopped. The deck keeps its last frame.");
+console.log("✓ Clawdeck service stopped. The deck keeps its last frame.");
 
 function sh(cmd, ignoreError = false) {
   try {

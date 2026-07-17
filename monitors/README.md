@@ -33,8 +33,8 @@ plain stdout line (or first stderr line on failure) becomes the caption.
 
 1. Drag a **Monitor Loop** key onto your deck.
 2. Open its settings, set a **Title**, paste the **Command** (e.g.
-   `~/.claude/claudedeck/monitors/slack-check.sh`), and an interval in seconds.
+   `~/.claude/clawdeck/monitors/slack-check.sh`), and an interval in seconds.
 3. Press the key any time to run it on demand.
 
 `npm run install-hooks` copies these examples to
-`~/.claude/claudedeck/monitors/` for you.
+`~/.claude/clawdeck/monitors/` for you.

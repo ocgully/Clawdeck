@@ -20,7 +20,7 @@ export interface Skill {
   description: string;
 }
 
-const usagePath = join(homedir(), ".claude", "claudedeck", "skill-usage.json");
+const usagePath = join(homedir(), ".claude", "clawdeck", "skill-usage.json");
 
 export function discoverSkills(cwd: string): Skill[] {
   const roots = [

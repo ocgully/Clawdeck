@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ClaudeDeck hook bridge.
+ * Clawdeck hook bridge.
  *
  * Claude Code invokes this on session lifecycle events, passing the event JSON
  * on stdin. We enrich it with the iTerm session identifiers from the
@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
-const SOCKET = path.join(os.homedir(), ".claude", "claudedeck", "deck.sock");
+const SOCKET = path.join(os.homedir(), ".claude", "clawdeck", "deck.sock");
 const HARD_TIMEOUT_MS = 400;
 
 function readStdin() {

@@ -10,6 +10,7 @@ import {
   actionTile,
   backTile,
   moreTile,
+  infoBarTile,
   type MonitorLevel,
 } from "../icons/render";
 import { focusTerminal, sendText } from "../integrations/terminal";
@@ -18,9 +19,14 @@ import type { KeyRole, Layout } from "./layout";
 import { MonitorRunner, type MonitorResult } from "./monitor-runner";
 import { discoverSkills, recordSkillUse } from "./skills";
 import { QUICK_ACTIONS, parseSuggestions, type ActionItem } from "./suggestions";
-import type { SessionInfo } from "../types";
+import { STATUS_COLOR, type SessionInfo } from "../types";
 
 const DOUBLE_TAP_MS = 400;
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
 
 /**
  * The daemon's brain. Two modes:
@@ -57,11 +63,18 @@ export class Controller {
 
   async start(): Promise<void> {
     this.geom = this.deck.geometry();
-    this.backIndex = this.geom.columns - 1;
-    this.moreIndex = (this.geom.rows - 1) * this.geom.columns + (this.geom.columns - 1);
-    this.contextSlots = Array.from({ length: this.geom.keyCount }, (_, i) => i).filter(
-      (i) => i !== this.backIndex && i !== this.moreIndex,
-    );
+
+    // Context view uses only renderable keys (Neo's RGB side buttons can't show
+    // a back arrow). Back = top-right, More = bottom-right of the drawable grid.
+    const drawable = this.geom.keys.filter((k) => k.renderable);
+    const maxCol = Math.max(...drawable.map((k) => k.column));
+    const rightCol = drawable.filter((k) => k.column === maxCol).sort((a, b) => a.row - b.row);
+    this.backIndex = rightCol[0]?.index ?? 0;
+    this.moreIndex = rightCol.length > 1 ? rightCol[rightCol.length - 1]!.index : -1;
+    this.contextSlots = drawable
+      .filter((k) => k.index !== this.backIndex && k.index !== this.moreIndex)
+      .sort((a, b) => a.row - b.row || a.column - b.column)
+      .map((k) => k.index);
 
     await this.deck.setBrightness(85);
     await this.deck.clearAll();
@@ -106,7 +119,8 @@ export class Controller {
 
   private async renderAll(): Promise<void> {
     this.views.reflow(this.liveSessions().length);
-    for (let i = 0; i < this.geom.keyCount; i++) await this.renderKey(i);
+    for (const k of this.geom.keys) await this.renderKey(k.index);
+    await this.renderInfoBar();
   }
 
   private async renderSessions(): Promise<void> {
@@ -122,12 +136,63 @@ export class Controller {
         await this.renderKey(i);
       }
     }
+    await this.renderInfoBar();
   }
 
   private async renderKey(index: number): Promise<void> {
+    // RGB-only keys (Neo's side buttons) can't show an image — light them with
+    // the colour that best represents their role instead.
+    if (!this.deck.isRenderable(index)) {
+      const [r, g, b] = this.colorFor(index);
+      await this.deck.fillColor(index, r, g, b);
+      return;
+    }
     const uri = this.mode === "context" ? this.contextFace(index) : this.dashboardFace(index);
     if (uri) await this.deck.renderKey(index, uri);
     else await this.deck.clearKey(index);
+  }
+
+  /** Representative colour for a non-drawable key. */
+  private colorFor(index: number): [number, number, number] {
+    if (this.mode === "context") return [10, 10, 12]; // side buttons idle in context view
+    const role = this.layout.keys[index];
+    if (!role) return [0, 0, 0];
+    switch (role.kind) {
+      case "pager": {
+        const peak = this.store.peakStatus();
+        return peak === "idle" ? [40, 44, 52] : hexToRgb(STATUS_COLOR[peak]);
+      }
+      case "attention": {
+        const urgent = this.store.mostUrgent();
+        return urgent ? hexToRgb(STATUS_COLOR[urgent.status]) : [12, 30, 16];
+      }
+      case "session": {
+        const info = this.sessionAtSlot(index);
+        return info ? hexToRgb(STATUS_COLOR[info.status]) : [0, 0, 0];
+      }
+      case "skills":
+        return this.liveSessions().length ? [96, 64, 200] : [0, 0, 0];
+      default:
+        return [0, 0, 0];
+    }
+  }
+
+  /** Neo's LCD strip: current view + a live status tally. */
+  private async renderInfoBar(): Promise<void> {
+    const lcd = this.geom.lcd;
+    if (!lcd) return;
+    const sessions = this.liveSessions();
+    const tally = {
+      running: sessions.filter((s) => s.status === "running").length,
+      waiting: sessions.filter((s) => s.status === "waiting").length,
+      error: sessions.filter((s) => s.status === "error").length,
+      idle: sessions.filter((s) => s.status === "idle").length,
+    };
+    const label =
+      this.mode === "context"
+        ? (this.contextSession ? this.store.get(this.contextSession)?.project : undefined) ?? "context"
+        : this.views.current().label;
+    await this.deck.renderLcd(infoBarTile(lcd.width, lcd.height, label, tally));
   }
 
   private dashboardFace(index: number): string | undefined {
@@ -233,7 +298,8 @@ export class Controller {
   }
 
   private async renderContext(): Promise<void> {
-    for (let i = 0; i < this.geom.keyCount; i++) await this.renderKey(i);
+    for (const k of this.geom.keys) await this.renderKey(k.index);
+    await this.renderInfoBar();
   }
 
   // --- input --------------------------------------------------------------

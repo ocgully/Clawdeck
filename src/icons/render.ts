@@ -225,6 +225,41 @@ export function moreTile(page: number, pages: number): string {
   );
 }
 
+/**
+ * The Stream Deck Neo's LCD info bar (248x58): current view on the left, a
+ * live status tally on the right. Non-square, so it builds its own viewBox.
+ */
+export function infoBarTile(
+  width: number,
+  height: number,
+  label: string,
+  tally: { running: number; waiting: number; error: number; idle: number },
+): string {
+  const cy = height / 2;
+  const chips: string[] = [];
+  const entries: [number, string][] = [
+    [tally.running, STATUS_COLOR.running],
+    [tally.waiting, STATUS_COLOR.waiting],
+    [tally.error, STATUS_COLOR.error],
+    [tally.idle, STATUS_COLOR.idle],
+  ];
+  let x = width - 14;
+  for (const [count, color] of entries.reverse()) {
+    if (!count) continue;
+    chips.push(
+      `<text x="${x}" y="${cy}" text-anchor="end" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="${color}">${count}</text>`,
+      `<circle cx="${x - 20}" cy="${cy}" r="5" fill="${color}"/>`,
+    );
+    x -= 40;
+  }
+  const body =
+    `<rect width="${width}" height="${height}" fill="${BG}"/>` +
+    `<text x="12" y="${cy}" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#E5E7EB">${esc(clip(label, 14))}</text>` +
+    chips.join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
 export type MonitorLevel = "ok" | "warn" | "alert" | "info" | "running" | "unknown";
 
 const MONITOR_COLOR: Record<MonitorLevel, string> = {

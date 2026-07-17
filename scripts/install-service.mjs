@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Install ClaudeDeck as a launchd LaunchAgent so it runs headless at login and
+ * Install Clawdeck as a launchd LaunchAgent so it runs headless at login and
  * relaunches if it exits — the "install and forget" replacement for the Elgato
  * app. Run: npm run service:install  (builds first via the npm script).
  *
- * Note: the agent runs `node dist/claudedeck.mjs`, so macOS attributes Input
+ * Note: the agent runs `node dist/clawdeck.mjs`, so macOS attributes Input
  * Monitoring / Automation permission to your Node binary. On first run it will
  * prompt (or log guidance); grant both once. A signed .app with its own bundle
  * id is the cleaner long-term identity — that's the next packaging step.
@@ -15,11 +15,11 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LABEL = "com.claudedeck.daemon";
+const LABEL = "com.clawdeck.daemon";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const entry = join(repo, "dist", "claudedeck.mjs");
+const entry = join(repo, "dist", "clawdeck.mjs");
 const node = process.execPath;
-const logDir = join(homedir(), ".claude", "claudedeck");
+const logDir = join(homedir(), ".claude", "clawdeck");
 const plistPath = join(homedir(), "Library", "LaunchAgents", `${LABEL}.plist`);
 
 if (!existsSync(entry)) {

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Wire ClaudeDeck into Claude Code and drop in the example monitors.
+ * Wire Clawdeck into Claude Code and drop in the example monitors.
  *
- * Idempotent: re-running removes any prior ClaudeDeck hook entries first, so
+ * Idempotent: re-running removes any prior Clawdeck hook entries first, so
  * it's safe to run after moving the repo. We hook only the events needed to
  * derive the four statuses — no per-tool spam, so Claude stays snappy.
  *
@@ -18,10 +18,13 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, "..");
-const hookPath = path.join(here, "claudedeck-hook.mjs");
+const hookPath = path.join(here, "clawdeck-hook.mjs");
 const nodeBin = process.execPath;
 const command = `${quote(nodeBin)} ${quote(hookPath)}`;
-const TAG = "claudedeck-hook.mjs";
+// Match our own entries so re-running is idempotent. The legacy tag is kept so
+// installs from before the Clawdeck rename get cleaned up rather than duplicated.
+const TAGS = ["clawdeck-hook.mjs", "claudedeck-hook.mjs"];
+const isOurs = (cmd) => TAGS.some((t) => String(cmd || "").includes(t));
 
 const EVENTS = [
   "SessionStart",
@@ -38,11 +41,11 @@ settings.hooks ??= {};
 
 for (const event of EVENTS) {
   const groups = Array.isArray(settings.hooks[event]) ? settings.hooks[event] : [];
-  // Strip any prior ClaudeDeck entries so re-running doesn't duplicate.
+  // Strip any prior Clawdeck entries so re-running doesn't duplicate.
   const cleaned = groups
     .map((g) => ({
       ...g,
-      hooks: (g.hooks || []).filter((h) => !String(h.command || "").includes(TAG)),
+      hooks: (g.hooks || []).filter((h) => !isOurs(h.command)),
     }))
     .filter((g) => (g.hooks || []).length > 0);
   cleaned.push({ hooks: [{ type: "command", command }] });
@@ -55,7 +58,7 @@ console.log(`✓ Hooked ${EVENTS.length} events in ${settingsPath}`);
 
 // Install example monitor scripts.
 const monitorsSrc = path.join(repo, "monitors");
-const monitorsDst = path.join(os.homedir(), ".claude", "claudedeck", "monitors");
+const monitorsDst = path.join(os.homedir(), ".claude", "clawdeck", "monitors");
 fs.mkdirSync(monitorsDst, { recursive: true });
 if (fs.existsSync(monitorsSrc)) {
   for (const file of fs.readdirSync(monitorsSrc)) {

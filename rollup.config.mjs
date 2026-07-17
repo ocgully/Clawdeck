@@ -9,7 +9,7 @@ const external = [/^@elgato-stream-deck/, "sharp", "node-hid", "node-mac-permiss
 export default {
   input: "src/standalone/main.ts",
   output: {
-    file: "dist/claudedeck.mjs",
+    file: "dist/clawdeck.mjs",
     format: "esm",
     banner: "#!/usr/bin/env node",
     sourcemap: true,
