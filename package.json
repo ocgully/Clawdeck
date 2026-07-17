@@ -31,7 +31,8 @@
     "pol": "rollup -c rollup.pol.mjs && node .pol/pol.mjs",
     "install-hooks": "node ./hooks/install.mjs",
     "service:install": "npm run build && node ./scripts/install-service.mjs",
-    "service:uninstall": "node ./scripts/uninstall-service.mjs"
+    "service:uninstall": "node ./scripts/uninstall-service.mjs",
+    "publish-wiki": "./scripts/publish-wiki.sh"
   },
   "dependencies": {
     "@elgato-stream-deck/node": "^7.6.3",
