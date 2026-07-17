@@ -1,5 +1,8 @@
 # Troubleshooting
 
+> **On Windows?** Most of this page is macOS-specific (permissions don't apply).
+> See **[Windows](Windows)** instead.
+
 Most problems are one of **two macOS permissions**. macOS denies both *silently*
 — nothing errors, things just don't happen.
 

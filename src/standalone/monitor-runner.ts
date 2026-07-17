@@ -28,6 +28,15 @@ interface MonitorSpec {
 
 const LEVELS: MonitorLevel[] = ["ok", "warn", "alert", "info", "running", "unknown"];
 
+/**
+ * The shell monitor commands run in. PowerShell on Windows so the bundled .ps1
+ * examples work and `$env:` syntax behaves; the user's login shell elsewhere.
+ */
+export function monitorShell(): string {
+  if (process.platform === "win32") return "powershell.exe";
+  return process.env.SHELL || "/bin/zsh";
+}
+
 export class MonitorRunner extends EventEmitter {
   private timers = new Map<number, ReturnType<typeof setInterval>>();
   private running = new Set<number>();
@@ -60,7 +69,7 @@ export class MonitorRunner extends EventEmitter {
 
     exec(
       spec.command,
-      { timeout: 60_000, cwd: homedir(), shell: process.env.SHELL || "/bin/zsh" },
+      { timeout: 60_000, cwd: homedir(), shell: monitorShell() },
       (err, stdout, stderr) => {
         this.running.delete(spec.index);
         const { level, caption } = parse(stdout, err ? 1 : 0, stderr);

@@ -76,6 +76,40 @@ over USB HID — no plugin host, no dragging tiles around in someone else's GUI.
 Layouts are generated from the device's real control geometry, so odd shapes
 (like the Neo, which isn't a dense grid) are handled correctly.
 
+## Platform support
+
+| | macOS | Windows 11 | Linux |
+| --- | --- | --- | --- |
+| Dashboard, colours, pages, attention | ✅ | ✅ | ✅ |
+| Button presses | ✅ (needs Input Monitoring) | ✅ (no permission needed) | ✅ |
+| Monitor loops | ✅ (`.sh`) | ✅ (`.ps1`, PowerShell) | ✅ |
+| Skills / context view | ✅ | ✅ | ✅ |
+| **Jump to terminal** | ✅ exact tab/pane | ⚠️ **window only** — see below | ❌ not implemented |
+| **1-shot run** (type into session) | ✅ | ⚠️ best-effort (SendKeys) | ❌ |
+| Run at login | ✅ launchd | ✅ Task Scheduler | ❌ |
+
+> **macOS is the verified platform.** Windows 11 support is implemented and
+> unit-tested but **has not been run against real Windows hardware** — if you try
+> it, please [open an issue](https://github.com/ocgully/Clawdeck/issues) with what
+> you find. Linux runs the deck fine but has no terminal integration.
+
+### The Windows caveat, honestly
+
+macOS gives us AppleScript, so Clawdeck can select the *exact* iTerm session or
+Terminal tab running a session. **Windows has no equivalent.** Windows Terminal
+hosts every tab in a *single* window and process and exposes no public API to
+activate a specific tab, so on Windows:
+
+- Jump-to-terminal raises the **window**, not the specific tab. Several sessions
+  in different tabs of one Windows Terminal all resolve to the same window.
+  Classic single-window consoles (a standalone PowerShell window per session)
+  focus precisely.
+- Typing into a session uses `SendKeys` against the focused window — it works,
+  but it's inherently more fragile than macOS's `write text`.
+
+If you want precise per-session focus on Windows today, run each Claude session
+in its **own console window** rather than as tabs in one Windows Terminal.
+
 ---
 
 ## How it works
@@ -120,8 +154,8 @@ red until the session actually recovers or you send a new prompt.
 
 ## Quick start
 
-**Requirements:** macOS, Node 20+, a Stream Deck, and the **Elgato desktop app
-quit or uninstalled** (it claims the USB device exclusively).
+**Requirements:** macOS or Windows 11, Node 20+, a Stream Deck, and the **Elgato
+desktop app quit or uninstalled** (it claims the USB device exclusively).
 
 ```bash
 git clone https://github.com/ocgully/Clawdeck
@@ -153,7 +187,8 @@ CLAWDECK_DEMO=1 npm start
 
 ## macOS permissions (important)
 
-Clawdeck needs two, and macOS will silently do nothing if they're missing:
+**macOS only — Windows needs none of this.** Clawdeck needs two, and macOS will
+silently do nothing if they're missing:
 
 | Permission | Why | Symptom if missing |
 | ---------- | --- | ------------------ |

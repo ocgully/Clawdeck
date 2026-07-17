@@ -14,6 +14,7 @@ becomes a window on a running Claude Code session.
 | **[Troubleshooting](Troubleshooting)** | The two macOS permissions that fail silently, and everything else |
 | **[Configuration](Configuration)** | `layout.json`, monitor loops, skills |
 | **[Hardware Support](Hardware-Support)** | MK.2, XL, Neo, Mini — and how geometry is handled |
+| **[Windows](Windows)** | Windows 11 support, and the terminal-focus caveat |
 | **[Architecture](Architecture)** | How status is derived, and why it's not terminal scraping |
 | **[Contributing](Contributing)** | Dev setup, tests, PRs |
 

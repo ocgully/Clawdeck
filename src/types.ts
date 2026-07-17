@@ -26,8 +26,11 @@ export const STATUS_COLOR: Record<SessionStatus, string> = {
 
 /**
  * Terminal coordinates captured from a session's environment, used to jump
- * focus. We support iTerm2 and macOS Terminal.app; the strategy is chosen from
- * `termProgram`. The TTY is the common fallback that works for both.
+ * focus and type into it.
+ *
+ * macOS: iTerm2 and Terminal.app, keyed by TTY (works for both).
+ * Windows: no TTY exists, so we keep a process id near the session and resolve
+ * a window from it at press time.
  */
 export interface TermTarget {
   /** TERM_PROGRAM, e.g. "iTerm.app" or "Apple_Terminal". */
@@ -36,8 +39,16 @@ export interface TermTarget {
   sessionId?: string;
   /** The GUID portion after the colon — matches `id of session` in iTerm2. */
   guid?: string;
-  /** TTY device path (e.g. /dev/ttys003) — the reliable cross-terminal key. */
+  /** TTY device path (e.g. /dev/ttys003) — the key on macOS/Linux. */
   tty?: string;
+  /**
+   * Windows only: a process id near the session (the hook's parent). Focus
+   * walks ancestors from here to a process owning a window. Captured cheaply —
+   * the expensive resolution happens at press time, not in the hook.
+   */
+  pid?: number;
+  /** Windows Terminal's per-tab GUID (WT_SESSION). Recorded for diagnostics. */
+  wtSession?: string;
 }
 
 /** @deprecated Use {@link TermTarget}. Kept as an alias for compatibility. */

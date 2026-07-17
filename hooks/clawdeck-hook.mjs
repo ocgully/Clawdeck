@@ -3,8 +3,8 @@
  * Clawdeck hook bridge.
  *
  * Claude Code invokes this on session lifecycle events, passing the event JSON
- * on stdin. We enrich it with the iTerm session identifiers from the
- * environment and forward one line to the plugin's unix socket, then exit.
+ * on stdin. We enrich it with whatever identifies the terminal on this platform
+ * and forward one line to the daemon, then exit.
  *
  * It must never block or fail Claude: if the deck isn't running, we exit 0
  * silently after a short timeout. Wire it up with `npm run install-hooks`.
@@ -14,7 +14,12 @@ import os from "node:os";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
-const SOCKET = path.join(os.homedir(), ".claude", "clawdeck", "deck.sock");
+const IS_WIN = process.platform === "win32";
+// Must mirror socketPath() in src/ipc/socket-server.ts. Duplicated because this
+// script is plain ESM run directly by Claude — it can't import the bundle.
+const SOCKET = IS_WIN
+  ? "\\\\.\\pipe\\clawdeck"
+  : path.join(os.homedir(), ".claude", "clawdeck", "deck.sock");
 const HARD_TIMEOUT_MS = 400;
 
 function readStdin() {
@@ -34,6 +39,7 @@ function currentTty() {
   // terminal. Walk the process tree to the first ancestor with a tty device —
   // that's the terminal to focus, and it matches Terminal.app's tab tty and
   // iTerm's session tty in AppleScript.
+  if (IS_WIN) return undefined; // Windows has no tty; we use a pid instead.
   try {
     const out = execSync("ps -Ao pid=,ppid=,tty=", { encoding: "utf8" });
     const tree = new Map();
@@ -54,6 +60,16 @@ function currentTty() {
 }
 
 function termTarget() {
+  if (IS_WIN) {
+    // No tty on Windows. Record a pid near the session — the daemon walks up
+    // from it to a window at press time. Deliberately no process-tree query
+    // here: hooks fire often and must stay cheap.
+    return {
+      termProgram: process.env.TERM_PROGRAM || undefined,
+      wtSession: process.env.WT_SESSION || undefined,
+      pid: process.ppid,
+    };
+  }
   const iterm = process.env.ITERM_SESSION_ID || "";
   const sessionId = iterm || process.env.TERM_SESSION_ID || "";
   const guid = iterm.includes(":") ? iterm.split(":").pop() : undefined;

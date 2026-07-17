@@ -89,6 +89,10 @@ Claude TUI or its shell. That tty matches both `tty of tab` (Terminal.app) and
 
 Both need macOS **Automation** permission.
 
+On Windows none of this applies — there's no tty and no way to address a Windows
+Terminal tab, so focus resolves a *window* from a process id instead. See
+[Windows](Windows) for what that costs.
+
 ## Rendering
 
 Every tile face is generated as an **SVG string** (`src/icons/render.ts`), then
@@ -119,5 +123,7 @@ them with a representative colour instead. See [Hardware Support](Hardware-Suppo
 | `state/session-store.ts` | hook events → the four-colour model |
 | `state/views.ts` | virtual paging |
 | `icons/render.ts` | the SVG icon engine |
-| `integrations/terminal.ts` | focus + type via osascript |
-| `ipc/socket-server.ts` | the unix socket hooks talk to |
+| `integrations/terminal.ts` | platform dispatcher for focus + type |
+| `integrations/terminal-darwin.ts` | macOS: osascript against iTerm2 / Terminal.app |
+| `integrations/terminal-win32.ts` | Windows: PowerShell window raise + SendKeys |
+| `ipc/socket-server.ts` | unix socket (macOS/Linux) or named pipe (Windows) |

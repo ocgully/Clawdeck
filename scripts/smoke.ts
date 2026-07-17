@@ -13,6 +13,10 @@ import type { HookMessage } from "../src/types.ts";
 import { TranscriptWatcher } from "../src/standalone/transcript-watcher.ts";
 import { parseSuggestions, QUICK_ACTIONS } from "../src/standalone/suggestions.ts";
 import { defaultLayout } from "../src/standalone/layout.ts";
+import { escapeSendKeys } from "../src/integrations/terminal-win32.ts";
+import { terminalControlSupported } from "../src/integrations/terminal.ts";
+import { socketPath } from "../src/ipc/socket-server.ts";
+import { monitorShell } from "../src/standalone/monitor-runner.ts";
 import { mkdtempSync, writeFileSync, appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -192,6 +196,22 @@ assert.equal((mk2.keys[14] as any).direction, "prev", "MK.2: page-down bottom-ri
 assert.equal(mk2.keys[3]!.kind, "monitor", "MK.2: Slack monitor in utility column");
 assert.equal(mk2.keys[8]!.kind, "skills", "MK.2: skills under the monitor");
 
+// Windows SendKeys escaping. SendKeys treats + ^ % ~ ( ) { } [ ] as control
+// characters; unescaped, a prompt like "fix (a+b)" would send keystrokes instead
+// of text. Pure logic, so it's testable from any platform.
+assert.equal(escapeSendKeys("continue"), "continue", "plain text passes through");
+assert.equal(escapeSendKeys("a+b"), "a{+}b", "plus is escaped");
+assert.equal(escapeSendKeys("fix (a+b)"), "fix {(}a{+}b{)}", "parens and plus escaped");
+assert.equal(escapeSendKeys("100% ^done~"), "100{%} {^}done{~}", "percent, caret, tilde escaped");
+assert.equal(escapeSendKeys("arr[0] {x}"), "arr{[}0{]} {{}x{}}", "brackets and braces escaped");
+assert.equal(escapeSendKeys("it's"), "it''s", "single quote doubled for PowerShell");
+assert.equal(escapeSendKeys("/gsd:plan-phase"), "/gsd:plan-phase", "slash commands unaffected");
+
+// Platform dispatch resolves for this host (macOS here).
+assert.equal(terminalControlSupported(), true, "terminal control supported on this platform");
+assert.ok(socketPath().endsWith("deck.sock"), "unix socket endpoint on non-Windows");
+assert.ok(!monitorShell().includes("powershell"), "monitor shell is the login shell on non-Windows");
+
 server.stop();
-console.log("✓ smoke: 34 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher, suggestions, layouts (Neo + MK.2)");
+console.log("✓ smoke: 44 assertions passed — socket, store, statuses, views, icons, sticky-error, transcript watcher, suggestions, layouts (Neo + MK.2), win32 sendkeys escaping, platform dispatch");
 process.exit(0);

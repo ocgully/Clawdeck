@@ -1,122 +1,30 @@
-import { execFile } from "node:child_process";
 import type { TermTarget } from "../types";
+import * as darwin from "./terminal-darwin";
+import * as win32 from "./terminal-win32";
 
 /**
- * Bring a specific terminal session to the foreground. Supports iTerm2 and
- * macOS Terminal.app; the strategy is chosen from the captured TERM_PROGRAM.
+ * Terminal control, dispatched per platform. Both implementations are
+ * best-effort by nature — the session's window may have closed, and each OS
+ * gives us a different (imperfect) handle on it. See the platform modules for
+ * what each can and can't do.
  *
- *  - iTerm2: match on the session GUID (from ITERM_SESSION_ID), TTY as backup.
- *  - Terminal.app: match on the tab's TTY, the only stable handle it exposes.
- *
- * Focus is best-effort: the pane may have closed, in which case we just log.
+ * Linux is not supported yet: there's no portable way to identify and raise a
+ * specific terminal across the many emulators/compositors, so we no-op rather
+ * than focus the wrong window.
  */
+const impl = process.platform === "win32" ? win32 : process.platform === "darwin" ? darwin : undefined;
+
+/** Bring the terminal running this session to the foreground. */
 export function focusTerminal(target: TermTarget | undefined): void {
-  if (!target) return;
-  const isAppleTerminal = target.termProgram === "Apple_Terminal";
-  const script = isAppleTerminal ? appleTerminalScript(target) : itermScript(target);
-  if (!script) return;
-
-  execFile("/usr/bin/osascript", ["-e", script], (err) => {
-    if (err) process.stderr.write(`[clawdeck] terminal focus failed: ${err.message}\n`);
-  });
+  impl?.focusTerminal(target);
 }
 
-function itermScript(target: TermTarget): string | undefined {
-  if (!target.guid && !target.tty) return undefined;
-  const guid = target.guid ? esc(target.guid) : "";
-  const tty = target.tty ? esc(target.tty) : "";
-  return `
-tell application "iTerm2"
-  activate
-  repeat with w in windows
-    repeat with t in tabs of w
-      repeat with s in sessions of t
-        set matchGuid to (${guid ? `id of s is "${guid}"` : "false"})
-        set matchTty to (${tty ? `tty of s is "${tty}"` : "false"})
-        if matchGuid or matchTty then
-          select w
-          tell t to select
-          select s
-          return
-        end if
-      end repeat
-    end repeat
-  end repeat
-end tell`.trim();
-}
-
-function appleTerminalScript(target: TermTarget): string | undefined {
-  if (!target.tty) return undefined;
-  const tty = esc(target.tty);
-  return `
-tell application "Terminal"
-  activate
-  repeat with w in windows
-    repeat with t in tabs of w
-      if tty of t is "${tty}" then
-        set selected tab of w to t
-        set index of w to 1
-        return
-      end if
-    end repeat
-  end repeat
-end tell`.trim();
-}
-
-/**
- * Type text into a session's terminal and submit it (used to 1-shot run a skill
- * or send a chosen prompt into a live Claude session). iTerm's `write text` and
- * Terminal's `do script ... in` both append a return, which submits the prompt.
- */
+/** Type text into the session's terminal and submit it. */
 export function sendText(target: TermTarget | undefined, text: string): void {
-  if (!target) return;
-  const isAppleTerminal = target.termProgram === "Apple_Terminal";
-  const script = isAppleTerminal
-    ? appleTerminalSend(target, text)
-    : itermSend(target, text);
-  if (!script) return;
-  execFile("/usr/bin/osascript", ["-e", script], (err) => {
-    if (err) process.stderr.write(`[clawdeck] send failed: ${err.message}\n`);
-  });
+  impl?.sendText(target, text);
 }
 
-function itermSend(target: TermTarget, text: string): string | undefined {
-  if (!target.guid && !target.tty) return undefined;
-  const tty = target.tty ? esc(target.tty) : "";
-  const guid = target.guid ? esc(target.guid) : "";
-  const payload = esc(text);
-  return `
-tell application "iTerm2"
-  repeat with w in windows
-    repeat with t in tabs of w
-      repeat with s in sessions of t
-        if (${guid ? `id of s is "${guid}"` : "false"}) or (${tty ? `tty of s is "${tty}"` : "false"}) then
-          tell s to write text "${payload}"
-          return
-        end if
-      end repeat
-    end repeat
-  end repeat
-end tell`.trim();
-}
-
-function appleTerminalSend(target: TermTarget, text: string): string | undefined {
-  if (!target.tty) return undefined;
-  const tty = esc(target.tty);
-  const payload = esc(text);
-  return `
-tell application "Terminal"
-  repeat with w in windows
-    repeat with t in tabs of w
-      if tty of t is "${tty}" then
-        do script "${payload}" in t
-        return
-      end if
-    end repeat
-  end repeat
-end tell`.trim();
-}
-
-function esc(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+/** True when the current platform can drive terminals at all. */
+export function terminalControlSupported(): boolean {
+  return impl !== undefined;
 }

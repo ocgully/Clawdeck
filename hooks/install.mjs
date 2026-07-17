@@ -56,25 +56,30 @@ fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
 console.log(`✓ Hooked ${EVENTS.length} events in ${settingsPath}`);
 
-// Install example monitor scripts.
+// Install example monitor scripts — .sh on unix, .ps1 on Windows.
+const isWin = process.platform === "win32";
+const ext = isWin ? ".ps1" : ".sh";
 const monitorsSrc = path.join(repo, "monitors");
 const monitorsDst = path.join(os.homedir(), ".claude", "clawdeck", "monitors");
 fs.mkdirSync(monitorsDst, { recursive: true });
 if (fs.existsSync(monitorsSrc)) {
   for (const file of fs.readdirSync(monitorsSrc)) {
-    if (!file.endsWith(".sh")) continue;
+    if (!file.endsWith(ext)) continue;
     const dst = path.join(monitorsDst, file);
     fs.copyFileSync(path.join(monitorsSrc, file), dst);
-    fs.chmodSync(dst, 0o755);
+    if (!isWin) fs.chmodSync(dst, 0o755);
   }
   console.log(`✓ Installed example monitors to ${monitorsDst}`);
 }
 
-try {
-  execSync("chmod +x " + quote(hookPath));
-} catch {}
+// The exec bit is meaningless on Windows (and chmod doesn't exist there).
+if (!isWin) {
+  try {
+    execSync("chmod +x " + quote(hookPath));
+  } catch {}
+}
 
-console.log("\nDone. Restart any open Claude Code sessions so the hooks load.");
+console.log("\nDone. Hooks reload live — no need to restart Claude sessions.");
 
 function readJson(p) {
   try {
